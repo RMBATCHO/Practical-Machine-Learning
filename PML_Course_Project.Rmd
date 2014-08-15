@@ -1,0 +1,176 @@
+---
+title: '"Predict Activity Quality using Machine Learning'
+author: "Rolande Sonya Mbatchou"
+output: html_document
+---
+
+
+**1. Sypnosis**
+---------------
+
+Groupware@LES has collected data from accelerometers on belt, forearm, arm, and dumbull on 6 participants to predict how well they perform barbell lifts in 5 different ways. In our analysis, we built a prediction model, using Machine Learning techniques, to predict the "classe" variable in the dataset. In fact, the "classe"" variable has values "A", "B", "C", "D", and "E", with classe A (exactly according to the specification to) to classe E (throwing the hips to the front). From our exploratory analysis, cross validation technique, and resulting accuracy rates, we concluded that a Random Forest model will best predict "classe". We obtained an **accuracy rate of 98.74**, while comparing our prediction to the testing set.     
+
+
+**2. Getting Data**
+-------------------
+
+```{r, echo=TRUE}
+
+# Set working directory
+setwd("C:/Users/rolande.mbatchou/Desktop/Data Science/Practical Machine Learning/Course Project")
+
+#Read the data
+trainData <- read.csv("trainData.csv", header=TRUE)
+testData <- read.csv("testData.csv", header=TRUE)
+```
+
+
+**3. Cleaning Data**
+--------------------
+
+***Correlation Analysis***
+
+From calculation correlation coefficients, we observed that "roll-belt" is highly correlated to "yaw-belt": 0.8152297. In order to reduce variance and by observing which of these two variables is most fit for our model, we decided to keep roll_belt only.
+
+***Exploratory Analysis - Part 1***
+
+The "gyros-" variables measure the orientation for 3-axial raw signals in the X, Y and Z directions. After careful look at plots of these variables, we decided to remove them from our dataset besides "gyros-belt-y/z" and "gyros/arm/y". In fact, from observing exploratory plots, we did not see them fit for our model. However,we observed a nice linear relationship between "gyros-belt-y/z" and "gyros-arm-y" histogram showed a homogenic relationship with "classe".
+
+For the "magnet-" variables, after looking at histograms and correlations, we removed magnet-belt-x, magnet-arm-y, and magnet-dumbbell-x/y. In fact, we didn't observe any major trend with the "classe" variable. 
+
+We also removed variables with large number of NAs or zeros, time variables, non-total accel_ values, and column with certain indexes (X, _window).
+
+```{r, echo=TRUE}
+
+toMatch <- c("max_", "min_", "amplitude_", "var_", "avg_", "stddev_", "yaw_belt", "magnet_arm_y", "kurtosis_", "skewness_", "X", "_timestamp", "_window", "accel_belt_x", "accel_belt_y","accel_belt_z", "accel_arm_x", "accel_arm_y", "accel_arm_z", "accel_dumbbell_x", "accel_dumbbell_y", "accel_dumbbell_z", "accel_forearm_x", "accel_forearm_y", "accel_forearm_z", "gyros_belt_x", "gyros_arm_z", "gyros_dumbbell_x", "gyros_dumbbell_y", "gyros_dumbbell_z", "gyros_forearm_x", "gyros_forearm_y", "gyros_forearm_z", "magnet_belt_x", "magnet_arm_y", "magnet_dumbbell_x", "magnet_dumbbell_y") 
+trainData[, grep(paste(toMatch,collapse="|"), names(trainData), value = TRUE)] <- list(NULL)
+testData[, grep(paste(toMatch,collapse="|"), names(testData), value = TRUE)] <- list(NULL)
+```
+
+***Cross Validation - Data Partition***
+
+Since our dataset gave us a training and testing sets, we decided to re-partition the training set into a sub-training and sub-testing, using 70/30 splits. We used the new "sub" testing set to predict our model. Finally, we predicted our final model on the original testing set. 
+
+```{r, echo=TRUE}
+
+library(caret)
+inTrain <- createDataPartition(trainData$classe, p= 0.7, list=FALSE)
+train <- trainData[inTrain,]; test <- trainData[-inTrain,]
+
+```
+
+***Exploratory Analysis - Part 2***
+
+We observed, from the histograms below, a relationship between User_name (potential predictor) and classe (outcome). In fact, user: Jeremy, seemed to be the best performer with relative diiference from classe A to worse classes. However, users: Pedro and Charles, seemed to make the most error as classe A frequency did not differ much from other classes.
+
+```{r, echo=FALSE}
+
+library(lattice)
+
+subdata1 <- train[train$user_name == "adelmo",]
+subdata2 <- train[train$user_name == "carlitos",]
+subdata3 <- train[train$user_name == "charles",]
+subdata4 <- train[train$user_name == "eurico",]
+subdata5 <- train[train$user_name == "jeremy",]
+subdata6 <- train[train$user_name == "pedro",]
+
+par(mfrow=c(2,3), mar=c(4,4,1,1))
+barplot(prop.table(table(subdata1$class)), col="blue", xlab="Adelmo - Classe Frequency")
+barplot(prop.table(table(subdata2$class)), col="red", xlab="Carlitos - Classe Frequency")
+barplot(prop.table(table(subdata3$class)), col="green", xlab="Charles - Classe Frequency")
+barplot(prop.table(table(subdata4$class)), col="pink", xlab="Eurico - Classe Frequency")
+barplot(prop.table(table(subdata5$class)), col="grey", xlab="Jeremy - Classe Frequency")
+barplot(prop.table(table(subdata6$class)), col="yellow", xlab="Pedro - Classe Frequency")
+
+dev.copy(png,"plot1.png",width=480,height=480,units="px")
+dev.off()
+```
+
+Other observations we made, were that the total acceleration on arm (total-accel-arm) and the gyroscopic measure Y on arm (gyros-arm-y) could be good predictors for classe (see Figure 2 and Figure 3 below). For the former (total-accel-arm), we remarked that classe A prevailed at midpoints. For the latter (gyros-arm-y), we observed that at the tails, classe E seemed to prevail, whereas at midpoint values class A seemed to do better. 
+
+```{r, echo=FALSE}
+
+qplot(total_accel_arm, colour=classe, data=train, xlab = expression(bold("Figure 2 - Total Acceleration on Arm - Potential Predictor for classe")))
+dev.copy(png,"plot2.png",width=480,height=480,units="px")
+dev.off()
+```
+
+```{r, echo=FALSE}
+
+qplot(gyros_arm_y, colour=classe, data=trainData, xlab = expression(bold("Figure 3 - Gyroscopic Measure Y on Arm - Potential Predictor for classe")))
+dev.copy(png,"plot3.png",width=480,height=480,units="px")
+dev.off()
+```
+
+Eventhough there are some variables that stood out, we decided to keep all 30 variables (the ones leftover from our Data Cleaning - see Exploratory Analysis Part 1) to run our model. Since our final model would probably not be a linear one, we acknowelged that some predictors may not be seen by simple exploratory analysis.  
+
+
+**4. Model Fit & Initial Cross Validation**
+-------------------------------------------
+
+We used Random Forest and Boosting models since they are best models used for factor variables (i.e. classe) and can best handle/predict the variable levels of our dataset. From there, we selected the model with the largest accuracy rate.
+
+```{r, echo=FALSE, results='hide'}
+
+#create a list of seed, here change the seed for each resampling
+set.seed(123)
+seeds <- vector(mode = "list", length = 11)
+for(i in 1:10) seeds[[i]]<- sample.int(n=1000, 3)
+seeds[[11]]<-sample.int(1000, 1) 
+
+#My Control List
+ctrl <- trainControl(method = "rf", seeds=seeds, index=createFolds(train$classe))
+
+#Build the models with Train controls
+modFit1 <- train(classe ~ ., data = train, method = "rf", trControl = ctrl)
+modFit2 <- train(classe ~ ., data = train, method = "gbm", trControl = ctrl)
+```
+
+```{r, echo=TRUE}
+
+# predict model on "sub" test set
+pred1 <- predict(modFit1, test) #Random Forest
+pred2 <- predict(modFit2, test) #Boosting
+
+#Ramdom Forest Model Fit - Confusion Matrix
+confusionMatrix(test$classe, pred1)
+
+#Boosting Model Fit - Confusion Matrix
+confusionMatrix(test$classe, pred2)
+```
+
+We observed for both models, from the confusion matrix, that **the Random Forest best predicted the "classe" variable with 99.03% Accuracy (contrary to boosting with 94.56% Accurary)**.
+
+
+**5. Cross Validation - Original TestData Set**
+-----------------------------------------------
+
+For our final cross-validation, we predicted our Random Forest model fit on the original TestData set. **We expected the out of sample error (Accuracy rate) to be lower than the in-sample rate, 99.03%, (due to overfit) but higher than the lower 95% confidence interval, 98.75% , for in-sample rate**.
+
+```{r, echo=TRUE}
+
+predFinal <- predict(modFit1,testData)
+
+#Ramdom Forest Final Model Fit - Predictions
+predFinal
+```
+
+**From the assignment submission, we scored 100% (20/20). Thus, we can conclude that our Random Forest model was a good fit.**
+
+
+```{r, echo=FALSE}
+
+#From the assignment instructions
+#The function to write the individual files containing the predictions that will be submitted to Coursera:
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+#Write out 20 files in the form problem_id_1.txt, problem_id_2.txt, etc.
+pml_write_files(as.character(predFinal))
+```
