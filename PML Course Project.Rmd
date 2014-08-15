@@ -8,7 +8,7 @@ output: html_document
 **1. Sypnosis**
 ---------------
 
-Groupware@LES has collected data from accelerometers on belt, forearm, arm, and dumbull on 6 participants to predict how well they perform barbell lifts in 5 different ways. In our analysis, we built a prediction model, using Machine Learning techniques, to predict the "classe" variable in the dataset. In fact, the "classe"" variable has values "A", "B", "C", "D", and "E", with classe A (exactly according to the specification to) to classe E (throwing the hips to the front). From our exploratory analysis, cross validation technique, and resulting accuracy rates, we concluded that a Random Forest model will best predict "classe". We obtained an **accuracy rate of 98.74**, while comparing our prediction to the testing set.     
+Groupware@LES has collected data from accelerometers on belt, forearm, arm, and dumbull on 6 participants to predict how well they perform barbell lifts in 5 different ways. In our analysis, we built a prediction model, using Machine Learning techniques, to predict the "classe" variable in the dataset. In fact, the "classe"" variable has values "A", "B", "C", "D", and "E", with classe A (exactly according to the specification to) to classe E (throwing the hips to the front). From our exploratory analysis, cross validation technique, and resulting accuracy rates, we concluded that a Random Forest model will best predict "classe". We obtained an **accuracy rate of 99.03%**, while comparing our prediction to the testing set.     
 
 
 **2. Getting Data**
@@ -166,4 +166,6 @@ pml_write_files = function(x){
 
 #Write out 20 files in the form problem_id_1.txt, problem_id_2.txt, etc.
 pml_write_files(as.character(predFinal))
+
+options(rpubs.upload.method = "internal")
 ```
