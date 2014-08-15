@@ -81,25 +81,18 @@ barplot(prop.table(table(subdata3$class)), col="green", xlab="Charles - Classe F
 barplot(prop.table(table(subdata4$class)), col="pink", xlab="Eurico - Classe Frequency")
 barplot(prop.table(table(subdata5$class)), col="grey", xlab="Jeremy - Classe Frequency")
 barplot(prop.table(table(subdata6$class)), col="yellow", xlab="Pedro - Classe Frequency")
-
-dev.copy(png,"plot1.png",width=480,height=480,units="px")
-dev.off()
 ```
 
 Other observations we made, were that the total acceleration on arm (total-accel-arm) and the gyroscopic measure Y on arm (gyros-arm-y) could be good predictors for classe (see Figure 2 and Figure 3 below). For the former (total-accel-arm), we remarked that classe A prevailed at midpoints. For the latter (gyros-arm-y), we observed that at the tails, classe E seemed to prevail, whereas at midpoint values class A seemed to do better. 
 
 ```{r, echo=FALSE}
 
-qplot(total_accel_arm, colour=classe, data=train, xlab = expression(bold("Figure 2 - Total Acceleration on Arm - Potential Predictor for classe")))
-dev.copy(png,"plot2.png",width=480,height=480,units="px")
-dev.off()
+qplot(total_accel_arm, colour=classe, data=train, binwidth= 2, xlab = expression(bold("Figure 2 - Total Acceleration on Arm - Potential Predictor for classe")))
 ```
 
 ```{r, echo=FALSE}
 
-qplot(gyros_arm_y, colour=classe, data=trainData, xlab = expression(bold("Figure 3 - Gyroscopic Measure Y on Arm - Potential Predictor for classe")))
-dev.copy(png,"plot3.png",width=480,height=480,units="px")
-dev.off()
+qplot(gyros_arm_y, colour=classe, data=trainData, binwidth= 1/5, xlab = expression(bold("Figure 3 - Gyroscopic Measure Y on Arm - Potential Predictor for classe")))
 ```
 
 Eventhough there are some variables that stood out, we decided to keep all 30 variables (the ones leftover from our Data Cleaning - see Exploratory Analysis Part 1) to run our model. Since our final model would probably not be a linear one, we acknowelged that some predictors may not be seen by simple exploratory analysis.  
